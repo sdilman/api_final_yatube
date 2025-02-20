@@ -5,14 +5,19 @@ from api.views import CommentViewSet, FollowViewSet, GroupViewSet, PostViewSet
 
 
 router = DefaultRouter()
-router.register('groups', GroupViewSet)
-router.register('follow', FollowViewSet)
-router.register('posts', PostViewSet)
+router.register(
+    r'posts/(?P<post_id>\d+)/comments/(?P<comment_id>\d*)',
+    CommentViewSet,
+    basename='comment'
+)
 router.register(
     r'posts/(?P<post_id>\d+)/comments',
     CommentViewSet,
     basename='comment'
 )
+router.register('groups', GroupViewSet)
+router.register('follow', FollowViewSet)
+router.register('posts', PostViewSet)
 
 
 version_patterns = [

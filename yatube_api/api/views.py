@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.exceptions import (
-    AuthenticationFailed, NotFound, PermissionDenied
+    AuthenticationFailed, NotFound, PermissionDenied, ValidationError
 )
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
@@ -39,20 +39,18 @@ class PostViewSet(viewsets.ModelViewSet):
             raise PermissionDenied('Пост другого автора нельзя удалять.')
         super().perform_destroy(instance)
 
-    # def destroy(self, request, *args, **kwargs):
-    #     try:
-    #         self.get_object()
-    #     except Post.DoesNotExist:
-    #         return Response(status=204)
-
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def check_user_is_comment_author(self):
         """Проверить совпадение автора коментария и текущего пользователя."""
         return self.get_object().author == self.request.user
+
+    def check_text_is_not_empty(self):
+        """Проверить что поле text не пустое."""
+        return self.get_object().text != ''
 
     def get_post_id(self):
         """Получить post_id если передан, или сгенерировать исключение."""
@@ -67,17 +65,38 @@ class CommentViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Post, pk=self.get_post_id())
 
     def get_queryset(self):
+        comment_id = self.get_post_id()
+        if comment_id is not None:
+            return self.get_post().comments.get(id=comment_id)
         return self.get_post().comments.all()
 
     def perform_create(self, serializer):
+        if not self.request.user.is_authenticated:
+            raise AuthenticationFailed(
+                'Анонимный пользователь не может создавать.'
+            )
+        if not self.check_text_is_not_empty():
+            raise ValidationError('Поле text пустое.')
         serializer.save(author=self.request.user, post=self.get_post())
 
     def perform_update(self, serializer):
+        if not self.request.user.is_authenticated:
+            raise AuthenticationFailed(
+                'Анонимный пользователь не может редактировать.'
+            )
+        if not self.check_text_is_not_empty():
+            raise ValidationError('Поле text пустое.')
         if not self.check_user_is_comment_author():
             raise PermissionDenied('Пост другого автора нельзя редактировать.')
         super().perform_update(serializer)
 
     def perform_destroy(self, instance):
+        if not self.request.user.is_authenticated:
+            raise AuthenticationFailed(
+                'Анонимный пользователь не может удалять.'
+            )
+        if not self.check_text_is_not_empty():
+            raise ValidationError('Поле text пустое.')
         if not self.check_user_is_comment_author():
             raise PermissionDenied('Пост другого автора нельзя удалять.')
         super().perform_destroy(instance)
@@ -100,8 +119,7 @@ class FollowViewSet(
 
     def get_queryset(self):
         """Вернуть подписки пользователя сделавшего запрос."""
-        user = self.request.user
-        return Follow.objects.filter(user=user)
+        return Follow.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         """Подписать текущего пользователя на пользователя из запроса."""
