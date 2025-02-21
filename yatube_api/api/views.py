@@ -65,9 +65,9 @@ class CommentViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Post, pk=self.get_post_id())
 
     def get_queryset(self):
-        comment_id = self.get_post_id()
+        comment_id = self.kwargs.get('comment_id')
         if comment_id is not None:
-            return self.get_post().comments.get(id=comment_id)
+            return self.get_post().comments.get(id=comment_id)  # TODO: решить с пустой строкой
         return self.get_post().comments.all()
 
     def perform_create(self, serializer):

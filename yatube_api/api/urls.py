@@ -8,7 +8,7 @@ router = DefaultRouter()
 router.register(
     r'posts/(?P<post_id>\d+)/comments/(?P<comment_id>\d*)',
     CommentViewSet,
-    basename='comment'
+    basename='comments'
 )
 router.register(
     r'posts/(?P<post_id>\d+)/comments',
