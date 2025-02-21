@@ -1,12 +1,11 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.exceptions import (
-    AuthenticationFailed, NotFound, PermissionDenied, ValidationError
+    AuthenticationFailed, PermissionDenied, ValidationError
 )
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.response import Response
 
-from posts.models import Comment, Follow, Group, Post
+from posts.models import Follow, Group, Post
 from .serializers import (
     CommentSerializer, GroupSerializer, FollowSerializer, PostSerializer
 )
@@ -48,10 +47,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         """Проверить совпадение автора коментария и текущего пользователя."""
         return self.get_object().author == self.request.user
 
-    def check_text_is_not_empty(self):
-        """Проверить что поле text не пустое."""
-        return self.get_object().text != ''
-
     def get_post_id(self):
         """Получить post_id если передан, или сгенерировать исключение."""
         post_id = self.kwargs.get('post_id')
@@ -65,9 +60,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Post, pk=self.get_post_id())
 
     def get_queryset(self):
-        comment_id = self.kwargs.get('comment_id')
-        if comment_id is not None:
-            return self.get_post().comments.get(id=comment_id)  # TODO: решить с пустой строкой
         return self.get_post().comments.all()
 
     def perform_create(self, serializer):
@@ -75,8 +67,8 @@ class CommentViewSet(viewsets.ModelViewSet):
             raise AuthenticationFailed(
                 'Анонимный пользователь не может создавать.'
             )
-        if not self.check_text_is_not_empty():
-            raise ValidationError('Поле text пустое.')
+        if not serializer.validated_data.get('text'):
+            raise ValidationError('Поле text пусто.')
         serializer.save(author=self.request.user, post=self.get_post())
 
     def perform_update(self, serializer):
@@ -84,8 +76,8 @@ class CommentViewSet(viewsets.ModelViewSet):
             raise AuthenticationFailed(
                 'Анонимный пользователь не может редактировать.'
             )
-        if not self.check_text_is_not_empty():
-            raise ValidationError('Поле text пустое.')
+        if not serializer.validated_data.get('text'):
+            raise ValidationError('Поле text пусто.')
         if not self.check_user_is_comment_author():
             raise PermissionDenied('Пост другого автора нельзя редактировать.')
         super().perform_update(serializer)
@@ -95,8 +87,6 @@ class CommentViewSet(viewsets.ModelViewSet):
             raise AuthenticationFailed(
                 'Анонимный пользователь не может удалять.'
             )
-        if not self.check_text_is_not_empty():
-            raise ValidationError('Поле text пустое.')
         if not self.check_user_is_comment_author():
             raise PermissionDenied('Пост другого автора нельзя удалять.')
         super().perform_destroy(instance)
