@@ -48,8 +48,8 @@ class PostSerializer(RecordSerializer):
 
 class FollowSerializer(serializers.ModelSerializer):
     user = SlugRelatedField(
-        slug_field='username',
-        queryset=User.objects.all()
+        read_only=True,
+        slug_field='username'
     )
     following = SlugRelatedField(
         slug_field='username',

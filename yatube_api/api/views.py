@@ -113,6 +113,6 @@ class FollowViewSet(
 
     def perform_create(self, serializer):
         """Подписать текущего пользователя на пользователя из запроса."""
-        if self.get_object().following == self.request.user:
-            raise PermissionDenied('Пост другого автора нельзя удалять.')
+        if serializer.validated_data.get('following') == self.request.user:
+            raise PermissionDenied('Нельзя подписаться на себя самого.')
         serializer.save(user=self.request.user)
