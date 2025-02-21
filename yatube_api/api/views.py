@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, permissions, viewsets
+from rest_framework import filters, mixins, permissions, viewsets
 from rest_framework.exceptions import (
     AuthenticationFailed, PermissionDenied, ValidationError
 )
@@ -106,6 +106,8 @@ class FollowViewSet(
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('following__username',)
 
     def get_queryset(self):
         """Вернуть подписки пользователя сделавшего запрос."""
@@ -113,6 +115,9 @@ class FollowViewSet(
 
     def perform_create(self, serializer):
         """Подписать текущего пользователя на пользователя из запроса."""
-        if serializer.validated_data.get('following') == self.request.user:
-            raise PermissionDenied('Нельзя подписаться на себя самого.')
+        following = serializer.validated_data.get('following')
+        if self.get_queryset().filter(following=following).exists():
+            raise ValidationError('Нельзя подписаться повторно.')
+        if following == self.request.user:
+            raise ValidationError('Нельзя подписаться на себя самого.')
         serializer.save(user=self.request.user)
