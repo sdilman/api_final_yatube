@@ -115,9 +115,7 @@ class FollowViewSet(
 
     def perform_create(self, serializer):
         """Подписать текущего пользователя на пользователя из запроса."""
-        following = serializer.validated_data.get('following')
-        if self.get_queryset().filter(following=following).exists():
-            raise ValidationError('Нельзя подписаться повторно.')
-        if following == self.request.user:
-            raise ValidationError('Нельзя подписаться на себя самого.')
+        # following = serializer.validated_data.get('following')
+        # if self.get_queryset().filter(following=following).exists():
+        #     raise ValidationError('Нельзя подписаться повторно.')
         serializer.save(user=self.request.user)
