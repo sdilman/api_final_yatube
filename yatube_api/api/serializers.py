@@ -7,7 +7,7 @@ from posts.models import Comment, Follow, Group, Post
 
 
 class RecordSerializer(serializers.ModelSerializer):
-    """Serializer for model with author."""
+    """Serializer для моделей с полем author."""
 
     author = serializers.SlugRelatedField(
         read_only=True,
@@ -30,6 +30,12 @@ class CommentSerializer(RecordSerializer):
             raise SerializerInitializationException('context не установлен.')
         validated_data['author'] = author
         return super().create(validated_data)
+
+    def validate_text(self, value):
+        """Проверить что поле text не пустое."""
+        if not value:
+            raise serializers.ValidationError("Поле text пустое.")
+        return value
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -58,5 +64,16 @@ class FollowSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('user', 'following')
-        read_only_fields = ('user',)
         model = Follow
+
+    def validate(self, data):
+        user = self.context['request'].user
+        following = data['following']
+        if user == following:
+            raise serializers.ValidationError(
+                "Нельзя подписаться на самого себя."
+            )
+        # Не исполльзуем UniqueTogetherValidator чтобы сохранить user readonly
+        if Follow.objects.filter(user=user, following=following).exists():
+            raise serializers.ValidationError('Нельзя подписаться повторно.')
+        return data
