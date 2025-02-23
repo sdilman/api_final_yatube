@@ -31,6 +31,12 @@ class CommentSerializer(RecordSerializer):
         validated_data['author'] = author
         return super().create(validated_data)
 
+    def validate_text(self, value):
+        """Проверить что поле text не пустое."""
+        if not value:
+            raise serializers.ValidationError("Поле text пустое.")
+        return value
+
 
 class GroupSerializer(serializers.ModelSerializer):
 

@@ -13,8 +13,20 @@ class Group(models.Model):
         return self.title
 
 
-class Post(models.Model):
+class Text(models.Model):
     text = models.TextField('Текст')
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='posts',
+        verbose_name='Автор'
+    )
+
+    class Meta:
+        abstract = True
+
+
+class Post(Text):
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
     author = models.ForeignKey(
         User,
@@ -41,7 +53,7 @@ class Post(models.Model):
         return self.text
 
 
-class Comment(models.Model):
+class Comment(Text):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -53,7 +65,6 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Пост')
-    text = models.TextField('Текст')
     created = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
 

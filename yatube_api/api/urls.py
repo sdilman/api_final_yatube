@@ -21,7 +21,6 @@ router.register('posts', PostViewSet)
 
 
 version_patterns = [
-    path('', include('djoser.urls')),
     path('', include('djoser.urls.jwt')),
     path('', include(router.urls))
 ]
