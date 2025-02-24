@@ -22,6 +22,8 @@ class CommentSerializer(RecordSerializer):
         fields = ('id', 'author', 'post', 'text', 'created')
         read_only_fields = ('post',)
 
+    text = serializers.CharField(required=True, allow_blank=False)
+
     def create(self, validated_data):
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
@@ -30,12 +32,6 @@ class CommentSerializer(RecordSerializer):
             raise SerializerInitializationException('context не установлен.')
         validated_data['author'] = author
         return super().create(validated_data)
-
-    def validate_text(self, value):
-        """Проверить что поле text не пустое."""
-        if not value:
-            raise serializers.ValidationError('Поле text пустое.')
-        return value
 
 
 class GroupSerializer(serializers.ModelSerializer):

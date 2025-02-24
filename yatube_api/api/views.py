@@ -42,10 +42,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         return self.get_post().comments.all()
 
     def perform_create(self, serializer):
-        if not self.request.user.is_authenticated:
-            raise AuthenticationFailed(
-                'Анонимный пользователь не может создавать.'
-            )
         serializer.save(author=self.request.user, post=self.get_post())
 
 
