@@ -34,7 +34,7 @@ class CommentSerializer(RecordSerializer):
     def validate_text(self, value):
         """Проверить что поле text не пустое."""
         if not value:
-            raise serializers.ValidationError("Поле text пустое.")
+            raise serializers.ValidationError('Поле text пустое.')
         return value
 
 
@@ -66,14 +66,18 @@ class FollowSerializer(serializers.ModelSerializer):
         fields = ('user', 'following')
         model = Follow
 
-    def validate(self, data):
-        user = self.context['request'].user
-        following = data['following']
-        if user == following:
+    def validate_following(self, value):
+        if self.context['request'].user == value:
             raise serializers.ValidationError(
-                "Нельзя подписаться на самого себя."
+                'Нельзя подписаться на самого себя.'
             )
+        return value
+
+    def validate(self, data):
         # Не исполльзуем UniqueTogetherValidator чтобы сохранить user readonly
-        if Follow.objects.filter(user=user, following=following).exists():
+        if Follow.objects.filter(
+            user=self.context['request'].user,
+            following=data['following']
+        ).exists():
             raise serializers.ValidationError('Нельзя подписаться повторно.')
         return data
