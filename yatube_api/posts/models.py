@@ -15,12 +15,6 @@ class Group(models.Model):
 
 class Text(models.Model):
     text = models.TextField('Текст')
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='posts',
-        verbose_name='Автор'
-    )
 
     class Meta:
         abstract = True

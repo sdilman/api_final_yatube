@@ -6,7 +6,7 @@ from rest_framework.exceptions import (
 from rest_framework.pagination import LimitOffsetPagination
 
 from posts.models import Follow, Group, Post
-from .permissions import AuthorOrReadOnly, ReadOnly
+from .permissions import AuthorOrReadOnly
 from .serializers import (
     CommentSerializer, GroupSerializer, FollowSerializer, PostSerializer
 )
@@ -21,11 +21,6 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    def get_permissions(self):
-        if self.action == 'retrieve':
-            return (ReadOnly(),)
-        return super().get_permissions()
-
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
@@ -36,7 +31,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         """Получить post_id если передан, или сгенерировать исключение."""
         post_id = self.kwargs.get('post_id')
         if post_id is None:
-            raise PermissionDenied("Параметр 'post_id' отсутствует.")
+            raise PermissionDenied('Параметр post_id отсутствует.')
         return post_id
 
     def get_post(self):
@@ -47,16 +42,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         return self.get_post().comments.all()
 
     def perform_create(self, serializer):
-        if not self.request.user.is_authenticated:
-            raise AuthenticationFailed(
-                'Анонимный пользователь не может создавать.'
-            )
         serializer.save(author=self.request.user, post=self.get_post())
-
-    def get_permissions(self):
-        if self.action == 'retrieve':
-            return (ReadOnly(),)
-        return super().get_permissions()
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
